@@ -24,7 +24,8 @@ function timestamp() {
 
 
 io.sockets.on('connection', function (socket) {
-  // store the socket and info about the user
+  console.log("connected"); // store the socket and info about the user
+
   sockets[socket.id] = socket;
   users[socket.id] = {
     connectedTo: -1,
@@ -45,11 +46,11 @@ io.sockets.on('connection', function (socket) {
 
   peopleActive++;
   peopleTotal++;
-  console.log(users);
   console.log(timestamp(), peopleTotal, "connect");
   io.sockets.emit('stats', {
     people: peopleActive
   });
+  console.log(users);
   socket.on("new", function () {
     // Got data from someone
     if (strangerQueue !== false) {
@@ -71,6 +72,7 @@ io.sockets.on('connection', function (socket) {
   }); // Conversation ended
 
   socket.on("disconn", function () {
+    console.log("diss");
     var connTo = users[socket.id].connectedTo;
 
     if (strangerQueue === socket.id || strangerQueue === connTo) {
@@ -96,9 +98,19 @@ io.sockets.on('connection', function (socket) {
       people: peopleActive
     });
   });
-  socket.on('chat', function (message) {
+  socket.on('chat', function (_ref) {
+    var senderId = _ref.senderId,
+        senderUsername = _ref.senderUsername,
+        senderImg = _ref.senderImg,
+        text = _ref.text;
+
     if (users[socket.id].connectedTo !== -1 && sockets[users[socket.id].connectedTo]) {
-      sockets[users[socket.id].connectedTo].emit('chat', message);
+      sockets[users[socket.id].connectedTo].emit('getMessage', {
+        senderId: senderId,
+        senderUsername: senderUsername,
+        senderImg: senderImg,
+        text: text
+      });
     }
   });
   socket.on('typing', function (isTyping) {
@@ -107,7 +119,7 @@ io.sockets.on('connection', function (socket) {
       sockets[users[socket.id].connectedTo].emit('typing', isTyping);
     }
   });
-  socket.on("disconnect", function (err) {
+  socket.on("outFromRandomChat", function (err) {
     // Someone disconnected, ctoed or was kicked
     //console.log(timestamp(), socket.id+" disconnected");
     var connTo = users[socket.id] && users[socket.id].connectedTo;

@@ -6,7 +6,7 @@
   "scripts": {
    
 
-"start":"nodemon randomChat.js"
+"start":"nodemon index.js"
   },
   "author": "",
   "license": "ISC"

@@ -8,6 +8,7 @@ const io=require("socket.io")(7000,{
 
 })
 
+
 var sockets = {},
 	users = {},
 	strangerQueue = false,
@@ -26,7 +27,7 @@ function timestamp () {
 
 // listen for connections
 io.sockets.on('connection', function (socket) {
-	
+	console.log("connected")
 	// store the socket and info about the user
 	sockets[socket.id] = socket;
 	users[socket.id] = {
@@ -36,7 +37,6 @@ io.sockets.on('connection', function (socket) {
 
 	// connect the user to another if strangerQueue isn't empty
 	if (strangerQueue !== false) {
-
 		users[socket.id].connectedTo = strangerQueue;
 		users[socket.id].isTyping = false;
 		users[strangerQueue].connectedTo = socket.id;
@@ -51,10 +51,9 @@ io.sockets.on('connection', function (socket) {
 
 	peopleActive++;
 	peopleTotal++;
-    console.log(users)
 	console.log(timestamp(), peopleTotal, "connect");
 	io.sockets.emit('stats', {people: peopleActive});
-
+console.log(users)
 	socket.on("new", function () {
 		
 		// Got data from someone
@@ -75,6 +74,7 @@ io.sockets.on('connection', function (socket) {
 	
 	// Conversation ended
 	socket.on("disconn", function () {
+		console.log("diss")
 		var connTo = users[socket.id].connectedTo;
 		if (strangerQueue === socket.id || strangerQueue === connTo) {
 			strangerQueue = false;
@@ -90,9 +90,25 @@ io.sockets.on('connection', function (socket) {
 		peopleActive -= 2;
 		io.sockets.emit('stats', {people: peopleActive});
 	});
-	socket.on('chat', function (message) {
+	socket.on('chat', function ( {
+		senderId,
+		senderUsername,
+		senderImg,
+  
+  
+		text
+  
+	  }) {
 		if (users[socket.id].connectedTo !== -1 && sockets[users[socket.id].connectedTo]) {
-			sockets[users[socket.id].connectedTo].emit('chat', message);
+			sockets[users[socket.id].connectedTo].emit('getMessage', {
+				senderId,
+				senderUsername,
+				senderImg,
+		  
+		  
+				text
+		  
+			  });
 		}
 	});
 	socket.on('typing', function (isTyping) {
@@ -102,7 +118,7 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 
-	socket.on("disconnect", function (err) {
+	socket.on("outFromRandomChat", function (err) {
 		
 		// Someone disconnected, ctoed or was kicked
 		//console.log(timestamp(), socket.id+" disconnected");
